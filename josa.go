@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-	"sync"
 	"unicode/utf8"
 )
+
+// package import 시 처음으로 호출하는 함수
+func init() {
+	evaluateJosaList()
+}
 
 var functionMap = map[string]func(string) string{
 	"은": EunNeun, "는": EunNeun, "은는": EunNeun, "는은": EunNeun, "은(는)": EunNeun, "는(은)": EunNeun, "은/는": EunNeun, "는/은": EunNeun,
@@ -21,19 +25,10 @@ var functionMap = map[string]func(string) string{
 }
 
 var josaList []string
-var josaListMutex sync.Mutex
 
 // 조사 목록을 함수 맵의 키로 부터 얻는다.
 func evaluateJosaList() {
-	josaListMutex.Lock()
-	defer josaListMutex.Unlock()
-
-	if josaList != nil {
-		return
-	}
-
 	josaList = make([]string, len(functionMap))
-
 	i := 0
 	for key := range functionMap {
 		josaList[i] = key
@@ -118,8 +113,6 @@ func Concat(word string, s string) string {
 //		s := Format("나{{은}} 생각한다. 고로 나{{은(는)}} 존재한다.")
 //		// s := "나는 생각한다. 고로 나는 존재한다."
 func Format(format string) string {
-	evaluateJosaList()
-
 	for _, josa := range josaList {
 		r := regexp.MustCompile(fmt.Sprintf("([가-힣ㄱ-ㅣ]+)\\{\\{%s\\}\\}", regexp.QuoteMeta(josa)))
 
